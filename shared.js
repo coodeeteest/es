@@ -71,7 +71,7 @@ function renderNav(active) {
   const isAdmin = session.role === "admin";
 
   const links = [
-        { id: "transactions",   href: "transactions.html",   icon: "#", label: "সাম্প্রতিক লেনদেন" },
+
     { id: "index",   href: "index.html",   icon: "◈", label: "ড্যাশবোর্ড" },
     { id: "ledger",  href: "ledger.html",  icon: "⇅", label: "লেজার" },
     { id: "coin",    href: "coin.html",    icon: "◉", label: "কয়েন" },
@@ -85,7 +85,7 @@ function renderNav(active) {
         <div class="nav-logo">💎</div>
         <span class="nav-title">Premium Ledger</span>
       </div>
-      <div class="nav-links"><a href="transactions.html">সাম্প্রতিক লেনদেন</a>v
+     
         ${links.map(l => `
           <a href="${l.href}" class="nav-link ${active === l.id ? "active" : ""}">
             <span class="nav-icon">${l.icon}</span>
