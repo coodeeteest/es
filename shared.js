@@ -84,7 +84,7 @@ function renderNav(active) {
         <div class="nav-logo">💎</div>
         <span class="nav-title">Premium Ledger</span>
       </div>
-      <div class="nav-links">
+      <div class="nav-links"><a href="transactions.html">সাম্প্রতিক লেনদেন</a>v
         ${links.map(l => `
           <a href="${l.href}" class="nav-link ${active === l.id ? "active" : ""}">
             <span class="nav-icon">${l.icon}</span>
