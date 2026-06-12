@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ড্যাশবোর্ড — Premium Ledger</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+body {
+  background:
+    radial-gradient(ellipse 50% 40% at 0% 0%, rgba(99,102,241,.1) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 50% at 100% 100%, rgba(52,211,153,.06) 0%, transparent 50%),
+    #030712;
+}
+
+.balance-hero {
+  background: linear-gradient(135deg, #0f0c29 0%, #1a1560 40%, #24243e 100%);
+  border-radius: 24px; padding: 32px;
+  margin-bottom: 20px; position: relative; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(99,102,241,.25);
+  border: 1px solid rgba(99,102,241,.15);
+  animation: fadeUp .5s ease both;
+}
+.balance-hero::before {
+  content: ''; position: absolute;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(99,102,241,.2), transparent 70%);
+  top: -80px; right: -60px; border-radius: 50%;
+}
+.balance-hero::after {
+  content: ''; position: absolute;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(139,92,246,.15), transparent 70%);
+  bottom: -30px; left: 30px; border-radius: 50%;
+}
+.hero-label { font-size: 11px; opacity: .7; letter-spacing: 1.5px; text-transform: uppercase; }
+.hero-amount {
+  font-size: 52px; font-weight: 800; letter-spacing: -2.5px;
+  margin-top: 10px; position: relative; z-index: 1;
+  font-family: 'JetBrains Mono', monospace;
+  background: linear-gradient(135deg, #ffffff, #c7d2fe);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-row {
+  display: flex; gap: 24px; margin-top: 22px; position: relative; z-index: 1;
+}
+.hero-stat small { font-size: 10px; opacity: .65; letter-spacing: .5px; text-transform: uppercase; }
+.hero-stat .hv   { font-size: 18px; font-weight: 800; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.hv.g { color: var(--green); }
+.hv.r { color: var(--red); }
+.hv.m { color: #c4b5fd; }
+
+.quick-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 20px;
+  animation: fadeUp .5s .1s ease both;
+}
+.q-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 22px 20px;
+  text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; gap: 12px;
+  transition: all .25s; position: relative; overflow: hidden;
+}
+.q-card::after {
+  content: ''; position: absolute; inset: 0; opacity: 0;
+  transition: opacity .25s; border-radius: 20px;
+}
+.q-card.income::after  { background: linear-gradient(135deg, rgba(52,211,153,.1), transparent); }
+.q-card.expense::after { background: linear-gradient(135deg, rgba(248,113,113,.09), transparent); }
+.q-card.coin::after    { background: linear-gradient(135deg, rgba(251,191,36,.09), transparent); }
+.q-card.users::after   { background: linear-gradient(135deg, rgba(99,102,241,.1), transparent); }
+.q-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+.q-card:hover::after { opacity: 1; }
+.q-icon { font-size: 24px; width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+.q-card.income .q-icon  { background: rgba(52,211,153,.12); }
+.q-card.expense .q-icon { background: rgba(248,113,113,.1); }
+.q-card.coin .q-icon    { background: rgba(251,191,36,.1); }
+.q-card.users .q-icon   { background: rgba(99,102,241,.12); }
+.q-label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--soft2); }
+.q-val   { font-size: 22px; font-weight: 800; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
+.q-val.g  { color: var(--green); }
+.q-val.r  { color: var(--red); }
+.q-val.gd { color: var(--gold); }
+.q-val.p  { color: var(--primary2); }
+.q-sub   { font-size: 11px; color: var(--soft2); }
+
+.recent-wrap { animation: fadeUp .5s .2s ease both; }
+
+/* ── My Coin Section ── */
+.coin-section-wrap { animation: fadeUp .5s .18s ease both; }
+
+.coin-summary-card {
+  position: relative; overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #1c1000 0%, #2d1800 50%, #3b1f00 100%);
+  border: 1px solid rgba(251,191,36,.18);
+  box-shadow: 0 20px 50px rgba(251,191,36,.12);
+  padding: 24px 26px;
+}
+.cscard-glow {
+  position: absolute; width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(251,191,36,.2), transparent 70%);
+  top: -60px; right: -40px; border-radius: 50%;
+  pointer-events: none;
+}
+.cscard-inner { position: relative; z-index: 1; }
+.cscard-top {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+}
+.cscard-icon {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: rgba(251,191,36,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+  border: 1px solid rgba(251,191,36,.2);
+}
+.cscard-label { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .65; }
+.cscard-bal {
+  font-size: 40px; font-weight: 800; letter-spacing: -2px;
+  color: #fde68a; font-family: 'JetBrains Mono', monospace;
+  margin-top: 4px; line-height: 1;
+}
+.cscard-row {
+  display: flex; align-items: center; gap: 0;
+  background: rgba(0,0,0,.25); border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.06);
+  overflow: hidden;
+}
+.cscard-stat {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 12px 10px; gap: 5px;
+}
+.cscard-stat-l { font-size: 10px; letter-spacing: .8px; text-transform: uppercase; opacity: .6; }
+.cscard-stat-v { font-size: 17px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.cscard-stat-v.give { color: var(--cyan); }
+.cscard-stat-v.take { color: #a78bfa; }
+.cscard-divider { width: 1px; height: 36px; background: rgba(255,255,255,.07); flex-shrink: 0; }
+
+/* coin log items */
+.coin-log-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.coin-log-item:last-child { border-bottom: none; }
+.cli-badge {
+  width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.cli-badge.give { background: rgba(34,211,238,.12); }
+.cli-badge.take { background: rgba(167,139,250,.12); }
+.cli-info { flex: 1; min-width: 0; }
+.cli-info .cli-reason { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cli-info .cli-date   { font-size: 11px; color: var(--soft2); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.cli-amount { font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace; text-align: right; flex-shrink: 0; }
+.cli-amount.give { color: var(--cyan); }
+.cli-amount.take { color: #a78bfa; }
+.cli-type-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 6px; display: inline-block; margin-bottom: 2px;
+}
+.cli-type-badge.give { background: rgba(34,211,238,.12); color: var(--cyan); }
+.cli-type-badge.take { background: rgba(167,139,250,.12); color: #a78bfa; }
+</style>
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="page-wrap">
+  <!-- Balance Hero -->
+  <div class="balance-hero">
+    <div class="hero-label">মোট ব্যালেন্স</div>
+    <div class="hero-amount" id="heroBalance">৳ —</div>
+    <div class="hero-row">
+      <div class="hero-stat">
+        <small>মোট আয়</small>
+        <div class="hv g" id="heroIn">৳ 0</div>
+      </div>
+      <div class="hero-stat">
+        <small>মোট ব্যয়</small>
+        <div class="hv r" id="heroOut">৳ 0</div>
+      </div>
+      <div class="hero-stat">
+        <small>এই মাসে</small>
+        <div class="hv m" id="heroMonth">৳ 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Cards -->
+  <div class="quick-grid" id="quickGrid">
+    <a href="ledger.html" class="q-card income">
+      <div class="q-icon">↑</div>
+      <div>
+        <div class="q-label">মোট আয়</div>
+        <div class="q-val g" id="qlIncome">৳ 0</div>
+        <div class="q-sub" id="qlIncomeCount">0 লেনদেন</div>
+      </div>
+    </a>
+    <a href="ledger.html" class="q-card expense">
+      <div class="q-icon">↓</div>
+      <div>
+        <div class="q-label">মোট ব্যয়</div>
+        <div class="q-val r" id="qlExpense">৳ 0</div>
+        <div class="q-sub" id="qlExpenseCount">0 লেনদেন</div>
+      </div>
+    </a>
+    <a href="coin.html" class="q-card coin">
+      <div class="q-icon">🪙</div>
+      <div>
+        <div class="q-label">কয়েন</div>
+        <div class="q-val gd" id="qlCoin">0</div>
+        <div class="q-sub" id="qlCoinSub">মোট ব্যালেন্স</div>
+      </div>
+    </a>
+    <a href="users.html" class="q-card users" id="qlUsersCard" style="display:none">
+      <div class="q-icon">👥</div>
+      <div>
+        <div class="q-label">ইউজার</div>
+        <div class="q-val p" id="qlUsers">0</div>
+        <div class="q-sub">মোট অ্যাকাউন্ট</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- My Coin Section (non-admin users) -->
+  <div id="myCoinSection" style="display:none; margin-bottom:20px;" class="coin-section-wrap">
+    <div class="coin-summary-card">
+      <div class="cscard-glow"></div>
+      <div class="cscard-inner">
+        <div class="cscard-top">
+          <div class="cscard-icon">🪙</div>
+          <div>
+            <div class="cscard-label">আমার কয়েন ব্যালেন্স</div>
+            <div class="cscard-bal" id="myCoinBal">0</div>
+          </div>
+        </div>
+        <div class="cscard-row">
+          <div class="cscard-stat">
+            <span class="cscard-stat-l">মোট পেয়েছি</span>
+            <span class="cscard-stat-v give" id="myCoinGiven">0</span>
+          </div>
+          <div class="cscard-divider"></div>
+          <div class="cscard-stat">
+            <span class="cscard-stat-l">মোট দিয়েছি</span>
+            <span class="cscard-stat-v take" id="myCoinTaken">0</span>
+          </div>
+          <div class="cscard-divider"></div>
+          <div class="cscard-stat">
+            <span class="cscard-stat-l">লেনদেন</span>
+            <span class="cscard-stat-v" id="myCoinCount" style="color:var(--soft2)">0 বার</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="sec-head" style="margin-bottom:14px;">
+        <h2>🪙 কয়েন লেনদেনের ইতিহাস</h2>
+        <a href="coin.html" class="btn btn-ghost btn-sm">বিস্তারিত →</a>
+      </div>
+      <div id="myCoinList">
+        <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="recent-wrap">
+    <div class="sec-head">
+      <h2>সাম্প্রতিক লেনদেন</h2>
+      <a href="ledger.html" class="btn btn-ghost btn-sm">সব দেখুন →</a>
+    </div>
+    <div class="card">
+      <div id="recentList">
+        <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const session = requireAuth();
+if (session) { renderNav("index"); loadDashboard(); }
+
+async function loadDashboard() {
+  try {
+    const res = await api("getTransactions");
+    if (!res.success) { toast(res.message, "error"); return; }
+
+    const tx = res.transactions;
+    let bal=0, inc=0, exp=0, coinBal=0, monthNet=0;
+    const now = new Date(), cm = now.getMonth(), cy = now.getFullYear();
+    let incC=0, expC=0;
+
+    tx.forEach(t => {
+      const a = parseFloat(t.amount);
+      const d = new Date(t.date);
+      const thisMonth = d.getMonth()===cm && d.getFullYear()===cy;
+      if (t.type==="in")  { bal+=a; inc+=a; incC++; if(thisMonth) monthNet+=a; }
+      if (t.type==="out") { bal-=a; exp+=a; expC++; if(thisMonth) monthNet-=a; }
+      if (t.type==="coin"){ coinBal+=a; }
+      if (t.type==="give"){ coinBal-=a; }
+      if (t.type==="take"){ coinBal+=a; }
+    });
+
+    document.getElementById("heroBalance").textContent = "৳ " + fmt(bal);
+    document.getElementById("heroIn").textContent      = "৳ " + fmt(inc);
+    document.getElementById("heroOut").textContent     = "৳ " + fmt(exp);
+    const mn = monthNet;
+    document.getElementById("heroMonth").textContent   = (mn>=0?"+":"-") + " ৳ " + fmt(Math.abs(mn));
+    document.getElementById("qlIncome").textContent    = "৳ " + fmt(inc);
+    document.getElementById("qlIncomeCount").textContent = incC + " লেনদেন";
+    document.getElementById("qlExpense").textContent   = "৳ " + fmt(exp);
+    document.getElementById("qlExpenseCount").textContent = expC + " লেনদেন";
+    document.getElementById("qlCoin").textContent      = fmt(coinBal);
+
+    if (session.role === "admin") {
+      document.getElementById("qlUsersCard").style.display = "";
+      const ures = await api("getAllUsers");
+      if (ures.success) document.getElementById("qlUsers").textContent = ures.users.length;
+    }
+
+    // ── User coin section ──
+    if (session.role !== "admin") {
+      // Filter give/take transactions where this user is target
+      const myCoinTx = tx.filter(t =>
+        (t.type === "give" || t.type === "take") &&
+        t.target_user === session.username
+      );
+
+      if (myCoinTx.length > 0) {
+        document.getElementById("myCoinSection").style.display = "";
+
+        let myGiven = 0, myTaken = 0;
+        myCoinTx.forEach(t => {
+          const a = parseFloat(t.amount);
+          if (t.type === "give") myGiven += a;   // admin দিয়েছে → আমি পেয়েছি
+          if (t.type === "take") myTaken += a;    // admin নিয়েছে → আমি দিয়েছি
+        });
+        const myBal = myGiven - myTaken;
+
+        document.getElementById("myCoinBal").textContent    = fmt(myBal);
+        document.getElementById("myCoinGiven").textContent  = fmt(myGiven);
+        document.getElementById("myCoinTaken").textContent  = fmt(myTaken);
+        document.getElementById("myCoinCount").textContent  = myCoinTx.length + " বার";
+
+        // List all coin transactions for this user
+        const lc = document.getElementById("myCoinList");
+        lc.innerHTML = myCoinTx.map(t => {
+          const isGive = t.type === "give";
+          // Clean reason: remove [@username] tag if present
+          const reason = t.reason.replace(/\s*\[@[^\]]*\]/g, "").trim() || (isGive ? "কয়েন প্রাপ্তি" : "কয়েন প্রদান");
+          return `<div class="coin-log-item">
+            <div class="cli-badge ${t.type}">${isGive ? "↓" : "↑"}</div>
+            <div class="cli-info">
+              <div class="cli-reason">${esc(reason)}</div>
+              <div class="cli-date">
+                <span class="cli-type-badge ${t.type}">${isGive ? "পেয়েছি" : "দিয়েছি"}</span>
+                · ${t.date}
+              </div>
+            </div>
+            <div class="cli-amount ${t.type}">${isGive ? "+" : "-"}${fmt(t.amount)}</div>
+          </div>`;
+        }).join("");
+      }
+    }
+
+    // Recent 6 (general transactions — in/out only for regular users)
+    const recentTx = session.role === "admin"
+      ? tx.slice(0, 6)
+      : tx.filter(t => t.type === "in" || t.type === "out").slice(0, 6);
+
+    const c = document.getElementById("recentList");
+    if (!recentTx.length) {
+      c.innerHTML = '<div class="empty"><div class="ico">📭</div>কোনো লেনদেন নেই।</div>';
+      return;
+    }
+    c.innerHTML = recentTx.map(t => {
+      const amtClass = { in:"in", out:"out", coin:"coin", give:"give", take:"take" }[t.type] || "in";
+      const showSign = t.type==="in" ? "+ " : "- ";
+      return `<div class="log-item">
+        <div class="log-dot ${amtClass}"></div>
+        <div class="log-info">
+          <strong>${esc(t.reason)}</strong>
+          <small>${t.date}${session.role==="admin" ? ` · ${t.username}` : ""}</small>
+        </div>
+        <div class="log-right">
+          <div class="log-amount ${amtClass}">${showSign}৳ ${fmt(t.amount)}</div>
+        </div>
+      </div>`;
+    }).join("");
+
+  } catch(e) { toast("লোড হয়নি।", "error"); }
+}
+
+function esc(s){ return String(s).replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>

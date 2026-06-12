@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>কয়েন — Premium Ledger</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+body {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(251,191,36,.07) 0%, transparent 50%),
+    #030712;
+}
+
+.coin-hero {
+  background: linear-gradient(135deg, #1c1000, #3b2006, #451a03);
+  border-radius: 22px; padding: 26px 28px; margin-bottom: 20px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+  box-shadow: 0 20px 50px rgba(251,191,36,.15);
+  border: 1px solid rgba(251,191,36,.12);
+  animation: fadeUp .4s ease both; position: relative; overflow: hidden;
+}
+.coin-hero::before {
+  content: '🪙'; position: absolute; right: -20px; top: -20px;
+  font-size: 120px; opacity: .05; transform: rotate(-20deg);
+}
+.coin-stat { padding: 4px 0; }
+.coin-stat.mid { border-left: 1px solid rgba(255,255,255,.08); border-right: 1px solid rgba(255,255,255,.08); padding: 4px 20px; }
+.coin-stat.right { text-align: right; }
+.coin-stat .cs-l { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; opacity: .65; }
+.coin-stat .cs-v  { font-size: 26px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; color: #fde68a; font-family: 'JetBrains Mono', monospace; }
+
+/* Tabs */
+.view-tabs {
+  display: flex; gap: 8px; margin-bottom: 18px;
+  animation: fadeUp .4s .05s ease both;
+}
+.vtab {
+  padding: 9px 18px; border-radius: 12px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--soft2); font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all .2s;
+}
+.vtab.active { background: rgba(251,191,36,.12); color: var(--gold); border-color: rgba(251,191,36,.25); }
+
+/* Admin panels */
+.admin-panels {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+  margin-bottom: 20px; animation: fadeUp .4s .08s ease both;
+}
+.panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 18px; padding: 20px;
+}
+.panel.add-panel  { border-top: 3px solid rgba(251,191,36,.4); }
+.panel.give-panel { border-top: 3px solid rgba(34,211,238,.4); }
+.panel.take-panel { border-top: 3px solid rgba(167,139,250,.4); }
+.panel h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px; }
+.panel.add-panel h3  { color: var(--gold); }
+.panel.give-panel h3 { color: var(--cyan); }
+.panel.take-panel h3 { color: #a78bfa; }
+
+/* User summary cards */
+.user-coin-list { animation: fadeUp .4s .12s ease both; }
+.uc-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 18px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+  transition: border-color .2s;
+}
+.uc-card:hover { border-color: rgba(251,191,36,.2); }
+.uc-avatar {
+  width: 42px; height: 42px; border-radius: 13px;
+  background: rgba(251,191,36,.15); display: flex;
+  align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.uc-info { flex: 1; min-width: 0; }
+.uc-name { font-size: 14px; font-weight: 700; }
+.uc-stats { font-size: 11px; color: var(--soft2); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.uc-balance {
+  font-size: 18px; font-weight: 800; text-align: right;
+  font-family: 'JetBrains Mono', monospace; color: var(--gold);
+}
+.uc-balance.neg { color: var(--red); }
+
+/* History items */
+.hist-wrap { animation: fadeUp .4s .1s ease both; }
+.period-bar {
+  display: flex; gap: 6px; margin-bottom: 16px;
+  overflow-x: auto; padding-bottom: 2px;
+}
+
+@media (max-width: 650px) {
+  .admin-panels { grid-template-columns: 1fr; }
+  .coin-hero { grid-template-columns: 1fr 1fr; }
+  .coin-hero .coin-stat.right { grid-column: 1/-1; border-top: 1px solid rgba(255,255,255,.08); padding-top: 12px; text-align: left; }
+  .coin-stat.mid { border: none; padding: 0; }
+}
+</style>
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="page-wrap">
+  <div class="page-header fade-up">
+    <h1>🪙 কয়েন</h1>
+    <p>কয়েন যোগ-বিয়োগ ও ইউজার বন্টন</p>
+  </div>
+
+  <!-- Coin Hero Stats -->
+  <div class="coin-hero">
+    <div class="coin-stat">
+      <div class="cs-l">কয়েন ব্যালেন্স</div>
+      <div class="cs-v" id="coinBalance">0</div>
+    </div>
+    <div class="coin-stat mid">
+      <div class="cs-l">মোট যোগ</div>
+      <div class="cs-v" id="coinAdded">0</div>
+    </div>
+    <div class="coin-stat right">
+      <div class="cs-l">মোট বিতরণ</div>
+      <div class="cs-v" id="coinDistributed">0</div>
+    </div>
+  </div>
+
+  <!-- View Tabs -->
+  <div class="view-tabs">
+    <button class="vtab active" onclick="setView('history',this)">📋 হিস্ট্রি</button>
+    <button class="vtab" onclick="setView('users',this)">👥 ইউজার ব্যালেন্স</button>
+  </div>
+
+  <!-- Admin Add/Give/Take panels -->
+  <div class="admin-panels" id="adminPanels" style="display:none">
+    <!-- Add coin (no user) -->
+    <div class="panel add-panel">
+      <h3>🪙 কয়েন যোগ/বিয়োগ</h3>
+      <div class="field">
+        <label>বিবরণ</label>
+        <input type="text" id="coinReason" placeholder="কারণ লিখুন...">
+      </div>
+      <div class="field">
+        <label>পরিমাণ</label>
+        <input type="number" id="coinAmount" placeholder="0" min="1">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-gold" style="flex:1" onclick="addCoin('coin')">+ যোগ</button>
+        <button class="btn btn-red"  style="flex:1" onclick="addCoin('coin_remove')">- বিয়োগ</button>
+      </div>
+    </div>
+
+    <!-- Give to user -->
+    <div class="panel give-panel">
+      <h3>→ ইউজারকে দিন</h3>
+      <div class="field">
+        <label>ইউজার</label>
+        <select id="giveUser"><option value="">— ইউজার বেছে নিন —</option></select>
+      </div>
+      <div class="field">
+        <label>পরিমাণ / বিবরণ</label>
+        <input type="number" id="giveAmount" placeholder="0">
+      </div>
+      <div class="field">
+        <label>নোট</label>
+        <input type="text" id="giveNote" placeholder="কারণ...">
+      </div>
+      <button class="btn btn-cyan btn-full" onclick="giveCoin()">→ কয়েন দিন</button>
+    </div>
+
+    <!-- Take from user -->
+    <div class="panel take-panel">
+      <h3>← ইউজার থেকে নিন</h3>
+      <div class="field">
+        <label>ইউজার</label>
+        <select id="takeUser"><option value="">— ইউজার বেছে নিন —</option></select>
+      </div>
+      <div class="field">
+        <label>পরিমাণ / বিবরণ</label>
+        <input type="number" id="takeAmount" placeholder="0">
+      </div>
+      <div class="field">
+        <label>নোট</label>
+        <input type="text" id="takeNote" placeholder="কারণ...">
+      </div>
+      <button class="btn btn-full" style="background:linear-gradient(135deg,#2e1065,#3b0764);color:#c4b5fd;" onclick="takeCoin()">← কয়েন নিন</button>
+    </div>
+  </div>
+
+  <!-- History View -->
+  <div id="histView">
+    <div class="period-bar">
+      <button class="ftab active-gold" onclick="setPeriod('all',this)">সব সময়</button>
+      <button class="ftab" onclick="setPeriod('day',this)">আজকে</button>
+      <button class="ftab" onclick="setPeriod('week',this)">এই সপ্তাহ</button>
+      <button class="ftab" onclick="setPeriod('month',this)">এই মাস</button>
+      <button class="ftab" onclick="setPeriod('year',this)">এই বছর</button>
+    </div>
+    <div class="card hist-wrap">
+      <div id="coinHistList">
+        <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Balance View -->
+  <div id="userView" style="display:none">
+    <div class="user-coin-list" id="userBalanceList">
+      <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <h3>🪙 কয়েন সম্পাদনা</h3>
+    <input type="hidden" id="editId">
+    <input type="hidden" id="editType">
+    <div class="field"><label>বিবরণ</label><input type="text" id="editReason"></div>
+    <div class="field"><label>পরিমাণ</label><input type="number" id="editAmount"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-gold" onclick="saveEdit()">সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const session = requireAuth();
+let allCoins = [], allUsers = [], currentView = "history", period = "all";
+const isAdmin = session && session.role === "admin";
+
+if (session) {
+  renderNav("coin");
+  if (isAdmin) {
+    document.getElementById("adminPanels").style.display = "";
+    loadUsers();
+  }
+  load();
+}
+
+async function load() {
+  try {
+    const res = await api("getTransactions");
+    if (!res.success) { toast(res.message, "error"); return; }
+    allCoins = res.transactions.filter(t => ["coin","coin_remove","give","take"].includes(t.type));
+    renderStats();
+    renderCurrentView();
+  } catch(e) { toast("লোড হয়নি।", "error"); }
+}
+
+async function loadUsers() {
+  try {
+    const res = await api("getAllUsers");
+    if (!res.success) return;
+    allUsers = res.users;
+    const opts = allUsers.filter(u => u.username !== "admin")
+      .map(u => `<option value="${esc(u.username)}">${esc(u.username)}</option>`).join("");
+    document.getElementById("giveUser").innerHTML = '<option value="">— ইউজার বেছে নিন —</option>' + opts;
+    document.getElementById("takeUser").innerHTML = '<option value="">— ইউজার বেছে নিন —</option>' + opts;
+  } catch(e) {}
+}
+
+function renderStats() {
+  let balance=0, added=0, distributed=0;
+  allCoins.forEach(t => {
+    const a = parseFloat(t.amount);
+    if (t.type==="coin")        { balance+=a; added+=a; }
+    if (t.type==="coin_remove") { balance-=a; }
+    if (t.type==="give")        { balance-=a; distributed+=a; }
+    if (t.type==="take")        { balance+=a; }
+  });
+  document.getElementById("coinBalance").textContent     = fmt(balance);
+  document.getElementById("coinAdded").textContent       = fmt(added);
+  document.getElementById("coinDistributed").textContent = fmt(distributed);
+}
+
+function setView(v, btn) {
+  currentView = v;
+  document.querySelectorAll(".vtab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("histView").style.display  = v==="history" ? "" : "none";
+  document.getElementById("userView").style.display  = v==="users" ? "" : "none";
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (currentView === "history") renderHistory();
+  else renderUserBalances();
+}
+
+function setPeriod(p, btn) {
+  period = p;
+  document.querySelectorAll(".period-bar .ftab").forEach(b => b.className = "ftab");
+  btn.classList.add("active-gold");
+  renderHistory();
+}
+
+function filterByPeriod(items) {
+  const now = new Date();
+  if (period === "all") return items;
+  return items.filter(t => {
+    const d = new Date(t.date);
+    if (period === "day")   return d.toDateString() === now.toDateString();
+    if (period === "week")  return (now - d) <= 7*24*60*60*1000;
+    if (period === "month") return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    if (period === "year")  return d.getFullYear()===now.getFullYear();
+    return true;
+  });
+}
+
+function renderHistory() {
+  const items = filterByPeriod(allCoins);
+  const c = document.getElementById("coinHistList");
+  if (!items.length) {
+    c.innerHTML = '<div class="empty"><div class="ico">🪙</div>কোনো রেকর্ড নেই।</div>';
+    return;
+  }
+
+  const typeInfo = {
+    coin:        { dot:"coin",  sign:"+", label:"যোগ",    color:"gold" },
+    coin_remove: { dot:"out",   sign:"-", label:"বিয়োগ",  color:"red" },
+    give:        { dot:"give",  sign:"→", label:"বিতরণ",  color:"cyan" },
+    take:        { dot:"take",  sign:"←", label:"গ্রহণ",  color:"purple" },
+  };
+
+  c.innerHTML = items.map(t => {
+    const info = typeInfo[t.type] || typeInfo.coin;
+    const showAdmin = isAdmin && t.username;
+    return `<div class="log-item">
+      <div class="log-dot ${info.dot}"></div>
+      <div class="log-info">
+        <strong>${esc(t.reason)}</strong>
+        <small>${t.date}${showAdmin ? ` · ${t.username}` : ""}
+          <span style="background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;margin-left:4px;">${info.label}</span>
+        </small>
+      </div>
+      <div class="log-right">
+        <div class="log-amount ${info.dot}">${info.sign} ${fmt(t.amount)}</div>
+        ${isAdmin ? `<div class="log-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEdit('${t.id}','${t.type}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="del('${t.id}')">🗑️</button>
+        </div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderUserBalances() {
+  const c = document.getElementById("userBalanceList");
+  if (!allUsers.length) {
+    c.innerHTML = '<div class="empty"><div class="ico">👥</div>ইউজার তথ্য নেই।</div>';
+    return;
+  }
+
+  // Calculate per-user balance
+  const userStats = {};
+  allUsers.forEach(u => {
+    userStats[u.username] = { given: 0, taken: 0, balance: 0, count: 0 };
+  });
+
+  allCoins.forEach(t => {
+    const a = parseFloat(t.amount);
+    // For give/take, the "target user" is in reason prefixed with @username:
+    // We store target in a special field. See addTransaction logic below.
+    // We match by t.target_user if available, else skip
+    if (t.type === "give" && t.target_user && userStats[t.target_user]) {
+      userStats[t.target_user].given   += a;
+      userStats[t.target_user].balance += a;
+      userStats[t.target_user].count++;
+    }
+    if (t.type === "take" && t.target_user && userStats[t.target_user]) {
+      userStats[t.target_user].taken   += a;
+      userStats[t.target_user].balance -= a;
+      userStats[t.target_user].count++;
+    }
+  });
+
+  const rows = allUsers.filter(u => u.username !== "admin");
+  if (!rows.length) { c.innerHTML = '<div class="empty"><div class="ico">👥</div>কোনো ইউজার নেই।</div>'; return; }
+
+  c.innerHTML = rows.map(u => {
+    const s = userStats[u.username] || { given:0, taken:0, balance:0, count:0 };
+    const isNeg = s.balance < 0;
+    return `<div class="uc-card">
+      <div class="uc-avatar">🪙</div>
+      <div class="uc-info">
+        <div class="uc-name">${esc(u.username)}</div>
+        <div class="uc-stats">দেওয়া: ${fmt(s.given)} · নেওয়া: ${fmt(s.taken)} · ${s.count} লেনদেন</div>
+      </div>
+      <div class="uc-balance ${isNeg?"neg":""}">${isNeg?"-":"+"}${fmt(Math.abs(s.balance))}</div>
+    </div>`;
+  }).join("");
+}
+
+async function addCoin(type) {
+  const reason = document.getElementById("coinReason").value.trim();
+  const amount = parseFloat(document.getElementById("coinAmount").value);
+  if (!reason || isNaN(amount) || amount<=0) { toast("সঠিক তথ্য দিন।","error"); return; }
+  try {
+    const res = await api("addTransaction",{type, reason, amount});
+    if (res.success) {
+      toast(type==="coin"?"কয়েন যোগ হয়েছে! 🪙":"কয়েন বিয়োগ হয়েছে!","success");
+      document.getElementById("coinReason").value="";
+      document.getElementById("coinAmount").value="";
+      await load();
+    } else toast(res.message,"error");
+  } catch(e) { toast("সেভ হয়নি।","error"); }
+}
+
+async function giveCoin() {
+  const targetUser = document.getElementById("giveUser").value;
+  const amount     = parseFloat(document.getElementById("giveAmount").value);
+  const note       = document.getElementById("giveNote").value.trim();
+  if (!targetUser || isNaN(amount)||amount<=0) { toast("ইউজার ও পরিমাণ দিন।","error"); return; }
+  const reason = (note ? note + " " : "") + `[@${targetUser}]`;
+  try {
+    const res = await api("addTransaction",{type:"give", reason, amount, target_user: targetUser});
+    if (res.success) {
+      toast(`${targetUser} কে ${fmt(amount)} দেওয়া হয়েছে ✅`,"success");
+      document.getElementById("giveAmount").value="";
+      document.getElementById("giveNote").value="";
+      await load();
+    } else toast(res.message,"error");
+  } catch(e) { toast("সেভ হয়নি।","error"); }
+}
+
+async function takeCoin() {
+  const targetUser = document.getElementById("takeUser").value;
+  const amount     = parseFloat(document.getElementById("takeAmount").value);
+  const note       = document.getElementById("takeNote").value.trim();
+  if (!targetUser || isNaN(amount)||amount<=0) { toast("ইউজার ও পরিমাণ দিন।","error"); return; }
+  const reason = (note ? note + " " : "") + `[@${targetUser}]`;
+  try {
+    const res = await api("addTransaction",{type:"take", reason, amount, target_user: targetUser});
+    if (res.success) {
+      toast(`${targetUser} থেকে ${fmt(amount)} নেওয়া হয়েছে ✅`,"success");
+      document.getElementById("takeAmount").value="";
+      document.getElementById("takeNote").value="";
+      await load();
+    } else toast(res.message,"error");
+  } catch(e) { toast("সেভ হয়নি।","error"); }
+}
+
+function openEdit(id, type) {
+  const t = allCoins.find(x => x.id==id);
+  if (!t) return;
+  document.getElementById("editId").value     = t.id;
+  document.getElementById("editType").value   = type;
+  document.getElementById("editReason").value = t.reason;
+  document.getElementById("editAmount").value = t.amount;
+  document.getElementById("editModal").classList.add("open");
+}
+function closeModal() { document.getElementById("editModal").classList.remove("open"); }
+
+async function saveEdit() {
+  const id     = document.getElementById("editId").value;
+  const type   = document.getElementById("editType").value;
+  const reason = document.getElementById("editReason").value.trim();
+  const amount = parseFloat(document.getElementById("editAmount").value);
+  if (!reason||isNaN(amount)||amount<=0) { toast("সঠিক তথ্য দিন.","error"); return; }
+  try {
+    const res = await api("updateTransaction",{id,type,reason,amount});
+    if (res.success) { toast("আপডেট হয়েছে ✅","success"); closeModal(); await load(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("হয়নি।","error"); }
+}
+
+async function del(id) {
+  if (!confirm("এই রেকর্ড মুছবেন?")) return;
+  try {
+    const res = await api("deleteTransaction",{id});
+    if (res.success) { toast("মুছা হয়েছে।","success"); await load(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("মুছা হয়নি।","error"); }
+}
+
+function esc(s){ return String(s).replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>

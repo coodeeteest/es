@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Premium Ledger</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 15%, rgba(99,102,241,.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 85% 85%, rgba(139,92,246,.12) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 100%, rgba(34,211,238,.05) 0%, transparent 50%),
+    #030712;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 20px;
+}
+
+.login-wrap {
+  width: 100%; max-width: 420px;
+  animation: fadeUp .6s ease both;
+}
+
+.login-card {
+  background: rgba(10,22,40,.95);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 28px;
+  padding: 44px 40px;
+  box-shadow: 0 40px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(99,102,241,.08) inset;
+  backdrop-filter: blur(20px);
+  position: relative; overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,.5), rgba(139,92,246,.5), transparent);
+}
+
+.logo-area { text-align: center; margin-bottom: 36px; }
+.logo-ring {
+  width: 76px; height: 76px; margin: 0 auto 16px;
+  position: relative;
+}
+.logo-ring::before {
+  content: '';
+  position: absolute; inset: -4px;
+  border-radius: 26px;
+  background: conic-gradient(from 180deg, #4f46e5, #7c3aed, #6366f1, #4f46e5);
+  opacity: .5; filter: blur(8px);
+  animation: spin 4s linear infinite;
+}
+.logo-icon {
+  position: relative; z-index: 1;
+  width: 76px; height: 76px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 12px 35px rgba(99,102,241,.5);
+}
+.logo-area h1 {
+  font-size: 26px; font-weight: 800; letter-spacing: -1px;
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe, #a5b4fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo-area p { color: var(--soft2); font-size: 13px; margin-top: 5px; }
+
+.hint-box {
+  background: rgba(99,102,241,.07);
+  border: 1px solid rgba(99,102,241,.18);
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-size: 12px; color: #818cf8;
+  text-align: center; margin-top: 18px; line-height: 1.8;
+}
+.hint-box code {
+  background: rgba(99,102,241,.15); border-radius: 6px;
+  padding: 1px 7px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--primary2);
+}
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="logo-area">
+      <div class="logo-ring">
+        <div class="logo-icon">💎</div>
+      </div>
+      <h1>Premium Ledger</h1>
+      <p>আর্থিক ব্যবস্থাপনা সিস্টেম</p>
+    </div>
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="u" placeholder="আপনার username লিখুন" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="p" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">
+      লগইন করুন →
+    </button>
+
+    <div class="hint-box">
+      🔑 Default Admin &nbsp;·&nbsp; <code>admin</code> / <code>admin123</code>
+    </div>
+  </div>
+</div>
+
+<script>
+if (getSession()) window.location.href = "index.html";
+
+document.getElementById("p").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLogin();
+});
+
+async function doLogin() {
+  const username = document.getElementById("u").value.trim();
+  const password = document.getElementById("p").value;
+  if (!username || !password) { toast("Username ও Password দিন।", "error"); return; }
+
+  const btn = document.getElementById("loginBtn");
+  btn.innerHTML = '<span class="spin"></span> লগইন হচ্ছে...';
+  btn.disabled = true;
+
+  try {
+    const res = await api("login", { username, password });
+    if (res.success) {
+      setSession({ token: res.token, username: res.username, role: res.role });
+      toast("স্বাগতম! 🎉", "success");
+      setTimeout(() => window.location.href = "index.html", 600);
+    } else {
+      toast(res.message || "ভুল তথ্য।", "error");
+      btn.innerHTML = "লগইন করুন →";
+      btn.disabled = false;
+    }
+  } catch (e) {
+    toast("সংযোগে সমস্যা। GAS URL চেক করুন।", "error");
+    btn.innerHTML = "লগইন করুন →";
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

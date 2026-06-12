@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ইউজার — Premium Ledger</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+body {
+  background:
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(99,102,241,.08) 0%, transparent 50%),
+    #030712;
+}
+
+.hero-bar {
+  background: linear-gradient(135deg, #0f0c29, #1a1560, #1e1b4b);
+  border-radius: 22px; padding: 26px 28px; margin-bottom: 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 20px 50px rgba(99,102,241,.2);
+  border: 1px solid rgba(99,102,241,.15);
+  animation: fadeUp .4s ease both;
+}
+.hero-bar .hv { font-size: 36px; font-weight: 800; letter-spacing: -2px; color: #c7d2fe; font-family: 'JetBrains Mono', monospace; }
+.hero-bar .sv { font-size: 20px; font-weight: 700; color: #818cf8; font-family: 'JetBrains Mono', monospace; }
+
+.form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 20px; animation: fadeUp .4s .08s ease both;
+}
+.form-grid .card { border-top: 3px solid rgba(99,102,241,.4); }
+
+.user-row {
+  display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+  border-radius: 16px; background: rgba(99,102,241,.04);
+  border: 1px solid rgba(99,102,241,.08); margin-bottom: 10px;
+  transition: all .2s;
+}
+.user-row:hover { background: rgba(99,102,241,.08); border-color: rgba(99,102,241,.15); }
+.u-avatar {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(99,102,241,.2), rgba(139,92,246,.2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.u-info { flex: 1; min-width: 0; }
+.u-name { font-size: 14px; font-weight: 700; }
+.u-meta { font-size: 11px; color: var(--soft2); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.u-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="page-wrap">
+  <div class="page-header fade-up">
+    <h1>⊙ ইউজার ব্যবস্থাপনা</h1>
+    <p>নতুন ইউজার তৈরি ও পরিচালনা করুন</p>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-bar">
+    <div>
+      <div style="font-size:10px;opacity:.7;letter-spacing:1px;text-transform:uppercase;">মোট ইউজার</div>
+      <div class="hv" id="totalUsers">0 জন</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;opacity:.7;letter-spacing:1px;text-transform:uppercase;">Admin</div>
+      <div class="sv" id="adminCount">0 জন</div>
+    </div>
+  </div>
+
+  <!-- Forms -->
+  <div class="form-grid">
+    <!-- Create User -->
+    <div class="card">
+      <h3>নতুন ইউজার তৈরি</h3>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="newUser" placeholder="ছোট হাতে, স্পেস ছাড়া">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="newPass" placeholder="শক্তিশালী পাসওয়ার্ড">
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select id="newRole">
+          <option value="user">User — সাধারণ</option>
+          <option value="admin">Admin — সম্পূর্ণ অ্যাক্সেস</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" id="createBtn" onclick="createUser()">
+        ⊙ ইউজার তৈরি করুন
+      </button>
+    </div>
+
+    <!-- Quick actions info -->
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <h3>বিদ্যমান ইউজার অ্যাকশন</h3>
+      <div style="color:var(--soft2);font-size:13px;line-height:1.8;">
+        <p>• <strong style="color:var(--text)">🔑 পাসওয়ার্ড</strong> — যেকোনো ইউজারের পাসওয়ার্ড পরিবর্তন করুন।</p>
+        <p>• <strong style="color:var(--text)">🗑️ মুছুন</strong> — ইউজার মুছলে তার ডেটা থেকে যাবে।</p>
+        <p>• <strong style="color:var(--text)">Default admin</strong> — মুছা যাবে না।</p>
+      </div>
+      <div style="margin-top:auto;">
+        <button class="btn btn-ghost btn-full" onclick="loadUsers()">🔄 তালিকা রিফ্রেশ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users List -->
+  <div class="card" style="animation: fadeUp .4s .12s ease both;">
+    <div class="sec-head" style="margin-bottom:16px;">
+      <h2>সকল ইউজার</h2>
+    </div>
+    <div id="usersList">
+      <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <h3>🔑 পাসওয়ার্ড পরিবর্তন</h3>
+    <input type="hidden" id="editUsername">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="editUserDisplay" disabled style="opacity:.5">
+    </div>
+    <div class="field">
+      <label>নতুন Password</label>
+      <input type="password" id="editNewPass" placeholder="নতুন পাসওয়ার্ড লিখুন">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" onclick="changePass()">পরিবর্তন করুন</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const session = requireAdmin();
+if (session) { renderNav("users"); loadUsers(); }
+
+async function loadUsers() {
+  try {
+    const res = await api("getAllUsers");
+    if (!res.success) { toast(res.message,"error"); return; }
+
+    const users = res.users;
+    document.getElementById("totalUsers").textContent = users.length + " জন";
+    document.getElementById("adminCount").textContent = users.filter(u=>u.role==="admin").length + " জন";
+
+    const c = document.getElementById("usersList");
+    if (!users.length) {
+      c.innerHTML = '<div class="empty"><div class="ico">👥</div>কোনো ইউজার নেই।</div>';
+      return;
+    }
+
+    c.innerHTML = users.map(u => `
+      <div class="user-row">
+        <div class="u-avatar">${u.role==="admin" ? "👑" : "👤"}</div>
+        <div class="u-info">
+          <div class="u-name">${esc(u.username)}</div>
+          <div class="u-meta">তৈরি: ${u.createdAt || "—"}</div>
+        </div>
+        <div class="u-right">
+          <span class="rbadge ${u.role}">${u.role}</span>
+          <button class="btn btn-ghost btn-sm" onclick="openEdit('${esc(u.username)}')">🔑</button>
+          ${u.username !== "admin"
+            ? `<button class="btn btn-red btn-sm" onclick="del('${esc(u.username)}')">🗑️</button>`
+            : ""}
+        </div>
+      </div>`).join("");
+
+  } catch(e) { toast("লোড হয়নি।","error"); }
+}
+
+async function createUser() {
+  const username = document.getElementById("newUser").value.trim();
+  const password = document.getElementById("newPass").value;
+  const role     = document.getElementById("newRole").value;
+
+  if (!username || !password) { toast("সব তথ্য পূরণ করুন।","error"); return; }
+  if (/\s/.test(username)) { toast("Username-এ স্পেস দেওয়া যাবে না।","error"); return; }
+
+  const btn = document.getElementById("createBtn");
+  btn.innerHTML = '<span class="spin"></span> তৈরি হচ্ছে...'; btn.disabled = true;
+
+  try {
+    const res = await api("register",{username,password,role});
+    if (res.success) {
+      toast(res.message,"success");
+      document.getElementById("newUser").value="";
+      document.getElementById("newPass").value="";
+      await loadUsers();
+    } else toast(res.message,"error");
+  } catch(e) { toast("তৈরি হয়নি।","error"); }
+
+  btn.innerHTML = "⊙ ইউজার তৈরি করুন"; btn.disabled = false;
+}
+
+function openEdit(username) {
+  document.getElementById("editUsername").value    = username;
+  document.getElementById("editUserDisplay").value = username;
+  document.getElementById("editNewPass").value     = "";
+  document.getElementById("editModal").classList.add("open");
+}
+function closeModal() { document.getElementById("editModal").classList.remove("open"); }
+
+async function changePass() {
+  const username = document.getElementById("editUsername").value;
+  const newPass  = document.getElementById("editNewPass").value;
+  if (!newPass) { toast("নতুন পাসওয়ার্ড দিন।","error"); return; }
+  try {
+    const res = await api("changePassword",{username, newPassword: newPass});
+    if (res.success) { toast("পাসওয়ার্ড পরিবর্তন হয়েছে ✅","success"); closeModal(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("হয়নি।","error"); }
+}
+
+async function del(username) {
+  if (!confirm(`"${username}" কে মুছবেন?`)) return;
+  try {
+    const res = await api("deleteUser",{username});
+    if (res.success) { toast(res.message,"success"); await loadUsers(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("মুছা হয়নি।","error"); }
+}
+
+function esc(s){ return String(s).replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>

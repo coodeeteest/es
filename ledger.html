@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>লেজার — Premium Ledger</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+body {
+  background:
+    radial-gradient(ellipse 50% 40% at 0% 0%, rgba(52,211,153,.07) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(248,113,113,.07) 0%, transparent 50%),
+    #030712;
+}
+
+/* Summary bar */
+.summary-bar {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px; margin-bottom: 20px;
+  animation: fadeUp .4s ease both;
+}
+.sum-box {
+  border-radius: 18px; padding: 20px 18px;
+  border: 1px solid var(--border);
+}
+.sum-box.in  { background: linear-gradient(135deg, #022c22, #064e3b); border-color: rgba(52,211,153,.15); }
+.sum-box.out { background: linear-gradient(135deg, #2d0a0a, #450a0a); border-color: rgba(248,113,113,.15); }
+.sum-box.net { background: linear-gradient(135deg, #1e1b4b, #1e1a47); border-color: rgba(99,102,241,.15); }
+.sum-box .sb-l { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+.sum-box .sb-v { font-size: 24px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
+.sum-box.in  .sb-v { color: var(--green); }
+.sum-box.out .sb-v { color: var(--red); }
+.sum-box.net .sb-v { color: var(--primary2); }
+
+/* Period tabs */
+.period-bar {
+  display: flex; gap: 6px; margin-bottom: 18px;
+  animation: fadeUp .4s .05s ease both;
+  overflow-x: auto; padding-bottom: 2px;
+}
+
+/* Add form row */
+.add-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 20px;
+  animation: fadeUp .4s .08s ease both;
+}
+.add-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 22px;
+}
+.add-box.in-box  { border-top: 3px solid rgba(52,211,153,.4); }
+.add-box.out-box { border-top: 3px solid rgba(248,113,113,.4); }
+.add-box h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+.add-box.in-box h3  { color: var(--green); }
+.add-box.out-box h3 { color: var(--red); }
+
+/* Two-column list */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  animation: fadeUp .4s .12s ease both;
+}
+.col-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px;
+}
+.col-card.in-col  { border-top: 2px solid rgba(52,211,153,.3); }
+.col-card.out-col { border-top: 2px solid rgba(248,113,113,.3); }
+.col-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.col-title.gt { color: var(--green); }
+.col-title.rt { color: var(--red); }
+
+@media (max-width: 600px) {
+  .add-row, .two-col { grid-template-columns: 1fr; }
+  .summary-bar { grid-template-columns: 1fr 1fr; }
+  .summary-bar .sum-box.net { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="page-wrap">
+  <div class="page-header fade-up">
+    <h1>⇅ লেজার</h1>
+    <p>আয় ও ব্যয়ের সম্পূর্ণ হিসাব</p>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar">
+    <div class="sum-box in">
+      <div class="sb-l">মোট আয়</div>
+      <div class="sb-v" id="sumIn">৳ 0</div>
+    </div>
+    <div class="sum-box out">
+      <div class="sb-l">মোট ব্যয়</div>
+      <div class="sb-v" id="sumOut">৳ 0</div>
+    </div>
+    <div class="sum-box net">
+      <div class="sb-l">নেট ব্যালেন্স</div>
+      <div class="sb-v" id="sumNet">৳ 0</div>
+    </div>
+  </div>
+
+  <!-- Period Filter -->
+  <div class="period-bar">
+    <button class="ftab active-green" onclick="setPeriod('all',this)">সব সময়</button>
+    <button class="ftab" onclick="setPeriod('day',this)">আজকে</button>
+    <button class="ftab" onclick="setPeriod('week',this)">এই সপ্তাহ</button>
+    <button class="ftab" onclick="setPeriod('month',this)">এই মাস</button>
+    <button class="ftab" onclick="setPeriod('year',this)">এই বছর</button>
+  </div>
+
+  <!-- Add Forms (Admin only) -->
+  <div class="add-row" id="addForms" style="display:none">
+    <div class="add-box in-box">
+      <h3>↑ আয় যোগ করুন</h3>
+      <div class="field">
+        <label>বিবরণ</label>
+        <input type="text" id="inReason" placeholder="যেমন: বেতন, ফ্রিল্যান্স...">
+      </div>
+      <div class="field">
+        <label>পরিমাণ (৳)</label>
+        <input type="number" id="inAmount" placeholder="0.00" min="1">
+      </div>
+      <button class="btn btn-green btn-full" id="addInBtn" onclick="addIncome()">↑ আয় যোগ করুন</button>
+    </div>
+    <div class="add-box out-box">
+      <h3>↓ ব্যয় যোগ করুন</h3>
+      <div class="field">
+        <label>বিবরণ</label>
+        <input type="text" id="outReason" placeholder="যেমন: ভাড়া, বিদ্যুৎ...">
+      </div>
+      <div class="field">
+        <label>পরিমাণ (৳)</label>
+        <input type="number" id="outAmount" placeholder="0.00" min="1">
+      </div>
+      <button class="btn btn-red btn-full" id="addOutBtn" onclick="addExpense()">↓ ব্যয় যোগ করুন</button>
+    </div>
+  </div>
+
+  <!-- Two Column List -->
+  <div class="two-col">
+    <div class="col-card in-col">
+      <div class="col-title gt">
+        <span>↑ আয়</span>
+        <span id="incCount" style="font-weight:400;color:var(--soft2)">0 টি</span>
+      </div>
+      <div id="incomeList">
+        <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+      </div>
+    </div>
+    <div class="col-card out-col">
+      <div class="col-title rt">
+        <span>↓ ব্যয়</span>
+        <span id="expCount" style="font-weight:400;color:var(--soft2)">0 টি</span>
+      </div>
+      <div id="expenseList">
+        <div class="empty"><div class="ico">⏳</div>লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <h3 id="editModalTitle">✏️ লেনদেন সম্পাদনা</h3>
+    <input type="hidden" id="editId">
+    <input type="hidden" id="editType">
+    <div class="field"><label>বিবরণ</label><input type="text" id="editReason"></div>
+    <div class="field"><label>পরিমাণ (৳)</label><input type="number" id="editAmount"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveEdit()">সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const session = requireAuth();
+let allTx = [], period = "all";
+
+if (session) {
+  renderNav("ledger");
+  if (session.role === "admin") document.getElementById("addForms").style.display = "";
+  load();
+}
+
+async function load() {
+  try {
+    const res = await api("getTransactions");
+    if (!res.success) { toast(res.message, "error"); return; }
+    allTx = res.transactions;
+    render();
+  } catch(e) { toast("লোড হয়নি।", "error"); }
+}
+
+function setPeriod(p, btn) {
+  period = p;
+  document.querySelectorAll(".period-bar .ftab").forEach(b => {
+    b.className = "ftab";
+  });
+  btn.classList.add("active-green");
+  render();
+}
+
+function filterByPeriod(items) {
+  const now = new Date();
+  if (period === "all") return items;
+  return items.filter(t => {
+    const d = new Date(t.date);
+    if (period === "day")   return d.toDateString() === now.toDateString();
+    if (period === "week")  return (now - d) <= 7*24*60*60*1000;
+    if (period === "month") return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    if (period === "year")  return d.getFullYear()===now.getFullYear();
+    return true;
+  });
+}
+
+function render() {
+  const incItems = filterByPeriod(allTx.filter(t => t.type === "in"));
+  const expItems = filterByPeriod(allTx.filter(t => t.type === "out"));
+
+  let totalIn = incItems.reduce((s,t) => s+parseFloat(t.amount), 0);
+  let totalOut= expItems.reduce((s,t) => s+parseFloat(t.amount), 0);
+  let net = totalIn - totalOut;
+
+  document.getElementById("sumIn").textContent  = "৳ " + fmt(totalIn);
+  document.getElementById("sumOut").textContent = "৳ " + fmt(totalOut);
+  document.getElementById("sumNet").textContent = (net >= 0 ? "+" : "-") + " ৳ " + fmt(Math.abs(net));
+  document.getElementById("incCount").textContent = incItems.length + " টি";
+  document.getElementById("expCount").textContent = expItems.length + " টি";
+
+  renderList("incomeList",  incItems, "in");
+  renderList("expenseList", expItems, "out");
+}
+
+function renderList(id, items, type) {
+  const c = document.getElementById(id);
+  if (!items.length) {
+    c.innerHTML = `<div class="empty"><div class="ico">${type==="in"?"📭":"💸"}</div>কোনো তথ্য নেই।</div>`;
+    return;
+  }
+  const isAdmin = session.role === "admin";
+  c.innerHTML = items.map(t => `
+    <div class="log-item">
+      <div class="log-dot ${type}"></div>
+      <div class="log-info">
+        <strong>${esc(t.reason)}</strong>
+        <small>${t.date}${isAdmin ? ` · ${t.username}` : ""}</small>
+      </div>
+      <div class="log-right">
+        <div class="log-amount ${type}">${type==="in"?"+":"-"} ৳ ${fmt(t.amount)}</div>
+        ${isAdmin ? `<div class="log-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEdit('${t.id}','${type}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="del('${t.id}')">🗑️</button>
+        </div>` : ""}
+      </div>
+    </div>`).join("");
+}
+
+async function addIncome() {
+  const reason = document.getElementById("inReason").value.trim();
+  const amount = parseFloat(document.getElementById("inAmount").value);
+  if (!reason || isNaN(amount) || amount<=0) { toast("সঠিক তথ্য দিন।","error"); return; }
+  const btn = document.getElementById("addInBtn");
+  btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
+  try {
+    const res = await api("addTransaction",{type:"in",reason,amount});
+    if (res.success) {
+      toast("আয় যোগ হয়েছে! ✅","success");
+      document.getElementById("inReason").value="";
+      document.getElementById("inAmount").value="";
+      await load();
+    } else toast(res.message,"error");
+  } catch(e) { toast("সেভ হয়নি।","error"); }
+  btn.innerHTML = "↑ আয় যোগ করুন"; btn.disabled = false;
+}
+
+async function addExpense() {
+  const reason = document.getElementById("outReason").value.trim();
+  const amount = parseFloat(document.getElementById("outAmount").value);
+  if (!reason || isNaN(amount) || amount<=0) { toast("সঠিক তথ্য দিন।","error"); return; }
+  const btn = document.getElementById("addOutBtn");
+  btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
+  try {
+    const res = await api("addTransaction",{type:"out",reason,amount});
+    if (res.success) {
+      toast("ব্যয় যোগ হয়েছে! ✅","success");
+      document.getElementById("outReason").value="";
+      document.getElementById("outAmount").value="";
+      await load();
+    } else toast(res.message,"error");
+  } catch(e) { toast("সেভ হয়নি।","error"); }
+  btn.innerHTML = "↓ ব্যয় যোগ করুন"; btn.disabled = false;
+}
+
+function openEdit(id, type) {
+  const t = allTx.find(x => x.id==id);
+  if (!t) return;
+  document.getElementById("editId").value     = t.id;
+  document.getElementById("editType").value   = type;
+  document.getElementById("editReason").value = t.reason;
+  document.getElementById("editAmount").value = t.amount;
+  document.getElementById("editModalTitle").textContent = type==="in" ? "✏️ আয় সম্পাদনা" : "✏️ ব্যয় সম্পাদনা";
+  document.getElementById("editModal").classList.add("open");
+}
+function closeModal() { document.getElementById("editModal").classList.remove("open"); }
+
+async function saveEdit() {
+  const id     = document.getElementById("editId").value;
+  const type   = document.getElementById("editType").value;
+  const reason = document.getElementById("editReason").value.trim();
+  const amount = parseFloat(document.getElementById("editAmount").value);
+  if (!reason||isNaN(amount)||amount<=0) { toast("সঠিক তথ্য দিন.","error"); return; }
+  try {
+    const res = await api("updateTransaction",{id,type,reason,amount});
+    if (res.success) { toast("আপডেট হয়েছে ✅","success"); closeModal(); await load(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("হয়নি।","error"); }
+}
+
+async function del(id) {
+  if (!confirm("এই লেনদেন মুছবেন?")) return;
+  try {
+    const res = await api("deleteTransaction",{id});
+    if (res.success) { toast("মুছা হয়েছে।","success"); await load(); }
+    else toast(res.message,"error");
+  } catch(e) { toast("মুছা হয়নি।","error"); }
+}
+
+function esc(s){ return String(s).replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>

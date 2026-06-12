@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>প্রিমিয়াম লেজার | লেনদেন ইতিহাস</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(circle at 10% 20%, #0b1120, #0a0f1c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            font-family: 'Inter', 'Segoe UI', 'Roboto', 'Noto Sans Bengali', sans-serif;
+            color: #f1f5f9;
+        }
+        .premium-card {
+            max-width: 1400px; width: 100%;
+            background: rgba(18, 25, 45, 0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 2.2rem;
+            box-shadow: 0 30px 50px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(234,179,8,0.2) inset;
+            padding: 1.8rem 1.8rem 2rem;
+        }
+        .header-area {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 1.8rem;
+            border-bottom: 2px solid rgba(234,179,8,0.35); padding-bottom: 1rem;
+        }
+        .title-section h2 {
+            font-size: 1.8rem; font-weight: 800;
+            background: linear-gradient(135deg, #F5E7D9, #facc15);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            letter-spacing: -0.02em;
+        }
+        .title-section p { color: #cbd5e1; font-size: 0.85rem; margin-top: 0.3rem; font-weight: 400; }
+        .back-header-btn {
+            background: #1e293b; border: 1px solid #eab308; border-radius: 60px;
+            padding: 0.5rem 1.3rem; color: #eab308; cursor: pointer;
+            font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .back-header-btn:hover { background: #eab308; color: #0f172a; transform: scale(0.97); }
+
+        /* লোডিং / এরর */
+        .loading-state { text-align: center; padding: 3rem; color: #cbd5e1; grid-column: 1/-1; }
+        .loading-state i { font-size: 2.5rem; color: #eab308; display: block; margin-bottom: 1rem; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-state { text-align: center; padding: 3rem; color: #cbd5e1; grid-column: 1/-1; }
+        .error-state i { font-size: 2.5rem; color: #f87171; display: block; margin-bottom: 0.8rem; }
+        .error-state p { font-size: 0.82rem; color: #94a3b8; margin-top: 0.4rem; }
+        .retry-btn {
+            margin-top: 1rem; background: #eab308; border: none; border-radius: 60px;
+            padding: 0.55rem 1.6rem; color: #0f172a; font-weight: 700;
+            cursor: pointer; font-size: 0.9rem; transition: 0.2s;
+        }
+        .retry-btn:hover { background: #ca8a04; }
+
+        /* সার্চ */
+        .search-bar { display: flex; gap: 0.8rem; margin-bottom: 1.8rem; flex-wrap: wrap; }
+        .search-input-wrapper { flex: 2; position: relative; min-width: 180px; }
+        .search-input-wrapper i { position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1rem; }
+        .search-input {
+            width: 100%; padding: 0.85rem 1rem 0.85rem 2.8rem; border-radius: 60px;
+            border: 1px solid #475569; background: #0f172a; color: #f1f5f9;
+            font-size: 0.95rem; transition: all 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: #eab308; box-shadow: 0 0 0 3px rgba(234,179,8,0.2); }
+        .action-buttons { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .btn-primary, .btn-outline {
+            border: none; padding: 0 1.4rem; border-radius: 60px; font-weight: 600;
+            cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+            display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px;
+        }
+        .btn-primary { background: #eab308; color: #0f172a; box-shadow: 0 4px 10px rgba(234,179,8,0.3); }
+        .btn-primary:hover { background: #ca8a04; transform: scale(0.97); }
+        .btn-outline { background: #1e293b; border: 1px solid #eab308; color: #eab308; }
+        .btn-outline:hover { background: #334155; }
+        .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ইউজার গ্রিড */
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+        .user-card {
+            background: #1e293b; border-radius: 1.8rem; padding: 1.2rem 1.2rem 1rem;
+            transition: all 0.3s cubic-bezier(0.2,0.9,0.4,1.1); cursor: pointer;
+            border: 1px solid rgba(234,179,8,0.25); box-shadow: 0 12px 24px -12px rgba(0,0,0,0.5);
+        }
+        .user-card.active { background: linear-gradient(135deg,#2d3a5e,#1e2a44); border-left: 5px solid #eab308; transform: translateY(-4px); box-shadow: 0 20px 30px -12px rgba(234,179,8,0.25); }
+        .user-card:hover { transform: translateY(-5px); border-color: #eab308; box-shadow: 0 24px 36px -14px rgba(234,179,8,0.3); }
+        .user-avatar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .avatar-icon {
+            width: 54px; height: 54px; flex-shrink: 0;
+            background: linear-gradient(145deg,#eab308,#ca8a04); border-radius: 60px;
+            display: flex; align-items: center; justify-content: center;
+            color: #0f172a; font-size: 1.6rem; box-shadow: 0 10px 18px -6px rgba(234,179,8,0.5);
+        }
+        .user-name { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.3px; color: #fff; }
+        .badge-row { display: flex; gap: 0.5rem; margin-top: 5px; flex-wrap: wrap; }
+        .stats-row { display: flex; justify-content: space-between; margin: 0.8rem 0; background: #0f172a; padding: 0.6rem; border-radius: 1.2rem; }
+        .stat-item { text-align: center; flex: 1; }
+        .stat-value { font-weight: 800; font-size: 1rem; color: #facc15; }
+        .stat-label-sm { font-size: 0.7rem; color: #cbd5e1; font-weight: 500; }
+        .coin-badge { background: #422d0d; color: #facc15; border-radius: 40px; padding: 0.25rem 0.8rem; font-size: 0.75rem; font-weight: 600; }
+        .money-badge { background: #1e293b; border: 1px solid #eab308; color: #facc15; border-radius: 40px; padding: 0.25rem 0.8rem; font-size: 0.75rem; font-weight: 600; }
+        .footer-note {
+            text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: #cbd5e1;
+            border-top: 1px solid rgba(234,179,8,0.2); padding-top: 1.2rem;
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 0.8rem;
+        }
+        .live-dot { display: inline-block; width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-right: 0.3rem; box-shadow: 0 0 6px #4ade80; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        .no-result { text-align: center; padding: 2.5rem; background: #0f172a; border-radius: 1.8rem; color: #cbd5e1; font-weight: 500; grid-column: 1/-1; }
+
+        /* হিস্টরি প্যানেল */
+        .history-panel {
+            margin-top: 1.2rem; background: rgba(0,0,0,0.55); backdrop-filter: blur(14px);
+            border-radius: 2rem; padding: 1.5rem;
+            border: 1px solid rgba(234,179,8,0.45); box-shadow: 0 20px 35px -12px black;
+        }
+        .history-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; border-left: 5px solid #eab308; padding-left: 1.2rem; gap: 0.8rem; }
+        .history-header h3 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; color: #facc15; }
+        .back-panel-btn { background: #1e293b; border: 1px solid #eab308; border-radius: 50px; padding: 0.4rem 1.2rem; color: #eab308; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+        .back-panel-btn:hover { background: #eab308; color: #0f172a; }
+        .stats-cards-row { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card-modern { flex: 1; min-width: 170px; border-radius: 1.8rem; padding: 1.3rem 1rem; text-align: center; transition: transform 0.25s ease; box-shadow: 0 12px 20px -12px rgba(0,0,0,0.4); }
+        .stat-card-modern.income-card  { background: linear-gradient(135deg,#0f2b1f,#0a1a12); border-bottom: 3px solid #4ade80; }
+        .stat-card-modern.expense-card { background: linear-gradient(135deg,#2a1215,#1a0a0c); border-bottom: 3px solid #f87171; }
+        .stat-card-modern:hover { transform: translateY(-5px); }
+        .stat-icon { font-size: 2rem; margin-bottom: 0.6rem; }
+        .stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #cbd5e1; }
+        .stat-amount { font-size: 2rem; font-weight: 800; margin-top: 0.3rem; letter-spacing: -0.5px; }
+        .income-amount  { color: #6ee7b7; }
+        .expense-amount { color: #f97373; }
+        .transaction-table-wrapper { overflow-x: auto; border-radius: 1.5rem; background: rgba(0,0,0,0.25); padding: 0.1rem; }
+        .transaction-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .transaction-table th { text-align: left; padding: 1rem 0.8rem; background: rgba(15,23,42,0.85); color: #facc15; font-weight: 700; border-bottom: 1px solid #334155; }
+        .transaction-table td { padding: 1rem 0.8rem; border-bottom: 1px solid #2d3a5e; font-weight: 500; color: #e2e8f0; }
+        .transaction-table tbody tr:nth-child(even) { background-color: rgba(30,41,59,0.45); }
+        .transaction-table tbody tr:nth-child(odd)  { background-color: rgba(15,23,42,0.3); }
+        .transaction-table tbody tr:hover { background-color: rgba(234,179,8,0.12); transition: 0.2s; }
+        .credit-indicator { color: #6ee7b7; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .debit-indicator  { color: #f97373;  font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .empty-row td { text-align: center !important; color: #64748b; padding: 1.5rem !important; font-style: italic; }
+        .section-subtitle { font-size: 1rem; margin: 1.2rem 0 0.8rem; color: #eab308; display: flex; align-items: center; gap: 0.6rem; font-weight: 600; }
+
+        /* গ্লাস ব্যালেন্স কার্ড */
+        .glass-balance-card {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid rgba(255,220,130,0.50);
+            border-radius: 1.8rem;
+            box-shadow: 0 24px 40px -12px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,200,0.12) inset;
+            padding: 1.4rem 1.8rem 1.5rem;
+            text-align: center;
+            transition: border-color 0.25s ease, background 0.25s ease;
+            margin: 2rem auto 0; width: 100%; max-width: 380px;
+        }
+        .glass-balance-card:hover { border-color: rgba(255,210,100,0.75); background: rgba(255,255,255,0.15); }
+        .balance-label-glass {
+            display: inline-block; font-size: 0.72rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 3px;
+            color: rgba(255,245,200,0.65); background: rgba(0,0,0,0.22);
+            padding: 0.22rem 1.1rem; border-radius: 40px;
+            backdrop-filter: blur(4px); margin-bottom: 0.75rem;
+            -webkit-font-smoothing: antialiased;
+        }
+        .balance-amount-glass {
+            display: block; font-size: 2.8rem; font-weight: 800;
+            letter-spacing: -0.03em; color: #fffef5;
+            -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.25);
+        }
+        @media (min-width: 768px) { .balance-amount-glass { font-size: 3.2rem; } }
+        @media (max-width: 550px) {
+            .premium-card { padding: 1.2rem; }
+            .stat-amount { font-size: 1.4rem; }
+            .transaction-table th, .transaction-table td { padding: 0.7rem 0.4rem; font-size: 0.75rem; }
+            .stat-card-modern { padding: 0.9rem; }
+            .user-name { font-size: 1.1rem; }
+            .glass-balance-card { max-width: 100%; margin-top: 1.5rem; }
+            .balance-amount-glass { font-size: 2.4rem; }
+            .title-section h2 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="premium-card">
+
+    <div class="header-area">
+        <div class="title-section">
+            <h2><i class="fas fa-history" style="color:#facc15;"></i> সাম্প্রতিক লেনদেন</h2>
+            <p>পয়েন্ট & টাকার পরিসংখ্যান · সক্রিয় সদস্য</p>
+        </div>
+        <button id="headerBackBtn" class="back-header-btn" style="display:none;">
+            <i class="fas fa-arrow-left"></i> ফিরে যান
+        </button>
+    </div>
+
+    <!-- ইউজার তালিকা -->
+    <div id="userListSection">
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchUserInput" class="search-input" placeholder="ইউজারনেম দিয়ে সার্চ করুন...">
+            </div>
+            <div class="action-buttons">
+                <button id="searchBtn"      class="btn-primary"><i class="fas fa-filter"></i> সার্চ</button>
+                <button id="resetSearchBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> সব দেখুন</button>
+                <button id="refreshBtn"     class="btn-outline" title="রিফ্রেশ"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+
+        <div id="userGridContainer" class="user-grid">
+            <div class="loading-state">
+                <i class="fas fa-spinner"></i>ডেটা লোড হচ্ছে...
+            </div>
+        </div>
+
+        <div class="footer-note">
+            <span><span class="live-dot"></span>লাইভ</span>
+            <span><i class="fas fa-users"></i> <span id="totalUsersText">মোট ইউজার: ০</span></span>
+            <span id="lastUpdatedText" style="color:#64748b;"></span>
+        </div>
+    </div>
+
+    <!-- হিস্টরি প্যানেল -->
+    <div id="historyPanel" class="history-panel" style="display:none;">
+        <div class="history-header">
+            <h3 id="historyUserName"><i class="fas fa-user"></i> লেনদেন ইতিহাস</h3>
+            <button id="panelBackBtn" class="back-panel-btn"><i class="fas fa-arrow-left"></i> ফিরে যান</button>
+        </div>
+        <div class="stats-cards-row">
+            <div class="stat-card-modern income-card">
+                <div class="stat-icon"><i class="fas fa-arrow-down" style="color:#4ade80;"></i></div>
+                <div class="stat-label">মোট আয়</div>
+                <div class="stat-amount income-amount" id="totalIncomeCard">৳ ০</div>
+            </div>
+            <div class="stat-card-modern expense-card">
+                <div class="stat-icon"><i class="fas fa-arrow-up" style="color:#f87171;"></i></div>
+                <div class="stat-label">মোট ব্যয়</div>
+                <div class="stat-amount expense-amount" id="totalExpenseCard">৳ ০</div>
+            </div>
+        </div>
+        <div class="section-subtitle"><i class="fas fa-money-bill-wave"></i> টাকার লেনদেন (৳)</div>
+        <div class="transaction-table-wrapper">
+            <table class="transaction-table">
+                <thead><tr><th>তারিখ</th><th>বিবরণ</th><th>পরিমাণ</th></tr></thead>
+                <tbody id="moneyHistoryBody"></tbody>
+            </table>
+        </div>
+        <div class="section-subtitle" style="margin-top:1.8rem;"><i class="fas fa-coins"></i> কয়েন / পয়েন্ট লেনদেন</div>
+        <div class="transaction-table-wrapper">
+            <table class="transaction-table">
+                <thead><tr><th>তারিখ</th><th>বিবরণ</th><th>পয়েন্ট</th></tr></thead>
+                <tbody id="pointsHistoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- গ্লাস ব্যালেন্স কার্ড -->
+    <div class="glass-balance-card">
+        <div class="balance-label-glass">মোট ব্যালেন্স</div>
+        <div class="balance-amount-glass" id="globalBalanceAmount">৳ ...</div>
+    </div>
+
+</div>
+
+<script>
+// ============================================================
+//  কনফিগারেশন
+//  GAS doGet endpoint — token ছাড়াই পাবলিক ডেটা দেবে
+// ============================================================
+const GAS_URL         = 'https://script.google.com/macros/s/AKfycbzQBE9Og7IQClZL3a7Qt-3OoisKrBxCMz3oj2p2DWftPXtTZAAETkYj-CdSa3z6aAfFOA/exec';
+const REFRESH_INTERVAL = 30000;
+
+let allUsers        = [];
+let allTransactions = [];
+let selectedUsername = null;
+let refreshTimer    = null;
+let isLoading       = false;
+
+// ============================================================
+//  GAS GET — ?action=getPublicData
+// ============================================================
+async function fetchData() {
+    if (isLoading) return;
+    isLoading = true;
+    setRefreshState(true);
+
+    try {
+        const url = `${GAS_URL}?action=getPublicData&_=${Date.now()}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        if (!json.success) throw new Error(json.message || 'ডেটা আনা যায়নি');
+
+        allUsers        = json.users        || [];
+        allTransactions = json.transactions || [];
+
+        updateLastUpdated();
+        renderUserList(document.getElementById('searchUserInput').value);
+        updateGlobalBalance();
+
+        if (selectedUsername && document.getElementById('historyPanel').style.display !== 'none') {
+            showUserHistory(selectedUsername);
+        }
+    } catch(e) {
+        showGridError(e.message);
+    } finally {
+        isLoading = false;
+        setRefreshState(false);
+    }
+}
+
+// ============================================================
+//  স্ট্যাট হিসাব
+//  type=in   + reason=username       → টাকা জমা
+//  type=out  + reason=username       → টাকা কর্তন
+//  type=give + target_user=username  → কয়েন আয়
+//  type=take + target_user=username  → কয়েন কর্তন
+// ============================================================
+function computeStats(username) {
+    const uLow = username.toLowerCase();
+    let moneyIncome = 0, moneyExpense = 0, coinEarn = 0, coinSpend = 0;
+    const moneyTx = [], coinTx = [];
+
+    allTransactions.forEach(tx => {
+        const type   = (tx.type        || '').toLowerCase().trim();
+        const reason = (tx.reason      || '').toLowerCase().trim();
+        const target = (tx.target_user || '').toLowerCase().trim();
+        const amount = parseFloat(tx.amount) || 0;
+        const date   = tx.date   || '';
+        const desc   = tx.reason || '';
+
+        if (type === 'in' && reason === uLow) {
+            moneyIncome += amount;
+            moneyTx.push({ kind: 'income', amount, desc: desc || 'টাকা জমা', date });
+        } else if (type === 'out' && reason === uLow) {
+            moneyExpense += amount;
+            moneyTx.push({ kind: 'expense', amount, desc: desc || 'টাকা কর্তন', date });
+        } else if (type === 'give' && target === uLow) {
+            coinEarn += amount;
+            coinTx.push({ kind: 'earn', amount, desc: desc || 'কয়েন প্রদান', date });
+        } else if (type === 'take' && target === uLow) {
+            coinSpend += amount;
+            coinTx.push({ kind: 'spend', amount, desc: desc || 'কয়েন কর্তন', date });
+        }
+    });
+
+    const sortDesc = (a, b) => new Date(b.date) - new Date(a.date);
+    moneyTx.sort(sortDesc);
+    coinTx.sort(sortDesc);
+
+    return { moneyIncome, moneyExpense, moneyBalance: moneyIncome - moneyExpense, coinEarn, coinSpend, coinBalance: coinEarn - coinSpend, moneyTx, coinTx };
+}
+
+// ============================================================
+//  ইউজার গ্রিড (role=user মাত্র)
+// ============================================================
+function renderUserList(filterText = '') {
+    const container = document.getElementById('userGridContainer');
+    const q = filterText.toLowerCase().trim();
+
+    const visible = allUsers.filter(u =>
+        (u.role || '').toLowerCase() === 'user' &&
+        (!q || (u.username || '').toLowerCase().includes(q))
+    );
+
+    if (visible.length === 0) {
+        container.innerHTML = `<div class="no-result"><i class="fas fa-user-slash"></i> কোনো ইউজার খুঁজে পাওয়া যায়নি</div>`;
+        document.getElementById('totalUsersText').textContent = 'মোট ইউজার: ০';
+        return;
+    }
+
+    document.getElementById('totalUsersText').textContent = `মোট ইউজার: ${visible.length}`;
+
+    container.innerHTML = visible.map(user => {
+        const uname  = user.username || '';
+        const stats  = computeStats(uname);
+        const active = selectedUsername === uname ? 'active' : '';
+        return `
+        <div class="user-card ${active}" data-username="${uname}">
+            <div class="user-avatar">
+                <div class="avatar-icon"><i class="fas fa-user-astronaut"></i></div>
+                <div>
+                    <div class="user-name">${uname}</div>
+                    <div class="badge-row">
+                        <span class="coin-badge"><i class="fas fa-coins"></i> ${stats.coinBalance} Pts</span>
+                        <span class="money-badge">৳ ${stats.moneyBalance}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item"><div class="stat-value">৳${stats.moneyIncome}</div><div class="stat-label-sm">আয়</div></div>
+                <div class="stat-item"><div class="stat-value">৳${stats.moneyExpense}</div><div class="stat-label-sm">ব্যয়</div></div>
+                <div class="stat-item"><div class="stat-value">${stats.coinBalance}</div><div class="stat-label-sm">কয়েন</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <small style="color:#fff;">ব্যালেন্স: ৳${stats.moneyBalance}</small>
+                <i class="fas fa-chevron-right" style="color:#eab308;"></i>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.querySelectorAll('.user-card').forEach(card => {
+        card.addEventListener('click', () => {
+            selectedUsername = card.dataset.username;
+            document.getElementById('userListSection').style.display  = 'none';
+            document.getElementById('historyPanel').style.display     = 'block';
+            document.getElementById('headerBackBtn').style.display    = 'flex';
+            showUserHistory(selectedUsername);
+        });
+    });
+}
+
+// ============================================================
+//  হিস্টরি প্যানেল
+// ============================================================
+function showUserHistory(username) {
+    const stats = computeStats(username);
+    document.getElementById('historyUserName').innerHTML = `<i class="fas fa-user"></i> ${username} - লেনদেন ইতিহাস`;
+    document.getElementById('totalIncomeCard').textContent  = `৳ ${stats.moneyIncome}`;
+    document.getElementById('totalExpenseCard').textContent = `৳ ${stats.moneyExpense}`;
+
+    document.getElementById('moneyHistoryBody').innerHTML = stats.moneyTx.length
+        ? stats.moneyTx.map(tx => {
+            const ind = tx.kind === 'income'
+                ? `<span class="credit-indicator"><i class="fas fa-arrow-down"></i> +৳${tx.amount}</span>`
+                : `<span class="debit-indicator"><i class="fas fa-arrow-up"></i> -৳${tx.amount}</span>`;
+            return `<tr><td>${tx.date}</td><td>${tx.desc}</td><td>${ind}</td></tr>`;
+          }).join('')
+        : `<tr class="empty-row"><td colspan="3">কোনো টাকার লেনদেন নেই</td></tr>`;
+
+    document.getElementById('pointsHistoryBody').innerHTML = stats.coinTx.length
+        ? stats.coinTx.map(tx => {
+            const ind = tx.kind === 'earn'
+                ? `<span class="credit-indicator"><i class="fas fa-plus-circle"></i> +${tx.amount}</span>`
+                : `<span class="debit-indicator"><i class="fas fa-minus-circle"></i> -${tx.amount}</span>`;
+            return `<tr><td>${tx.date}</td><td>${tx.desc}</td><td>${ind}</td></tr>`;
+          }).join('')
+        : `<tr class="empty-row"><td colspan="3">কোনো কয়েন লেনদেন নেই</td></tr>`;
+}
+
+// ============================================================
+//  গ্লোবাল ব্যালেন্স
+// ============================================================
+function updateGlobalBalance() {
+    let total = 0;
+    allTransactions.forEach(tx => {
+        const t = (tx.type || '').toLowerCase().trim();
+        const a = parseFloat(tx.amount) || 0;
+        if (t === 'in')  total += a;
+        if (t === 'out') total -= a;
+    });
+    document.getElementById('globalBalanceAmount').textContent = `৳ ${total.toLocaleString('bn-BD')}`;
+}
+
+// ============================================================
+//  UI হেল্পার
+// ============================================================
+function showGridError(msg) {
+    document.getElementById('userGridContainer').innerHTML = `
+    <div class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>ডেটা লোড হয়নি</strong>
+        <p>${msg}</p>
+        <button class="retry-btn" onclick="fetchData()"><i class="fas fa-redo"></i> আবার চেষ্টা করুন</button>
+    </div>`;
+}
+
+function setRefreshState(loading) {
+    const btn = document.getElementById('refreshBtn');
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.innerHTML = loading ? '<i class="fas fa-spinner fa-spin"></i>' : '<i class="fas fa-redo"></i>';
+}
+
+function updateLastUpdated() {
+    document.getElementById('lastUpdatedText').textContent =
+        `আপডেট: ${new Date().toLocaleTimeString('bn-BD')}`;
+}
+
+function backToUserList() {
+    document.getElementById('userListSection').style.display = 'block';
+    document.getElementById('historyPanel').style.display    = 'none';
+    document.getElementById('headerBackBtn').style.display   = 'none';
+    renderUserList(document.getElementById('searchUserInput').value);
+}
+
+// ============================================================
+//  ইভেন্ট
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+    refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
+
+    document.getElementById('searchBtn').addEventListener('click', () =>
+        renderUserList(document.getElementById('searchUserInput').value));
+    document.getElementById('resetSearchBtn').addEventListener('click', () => {
+        document.getElementById('searchUserInput').value = '';
+        renderUserList('');
+    });
+    document.getElementById('searchUserInput').addEventListener('keyup', e => {
+        if (e.key === 'Enter') renderUserList(e.target.value);
+    });
+    document.getElementById('refreshBtn').addEventListener('click', fetchData);
+    document.getElementById('headerBackBtn').addEventListener('click', backToUserList);
+    document.getElementById('panelBackBtn').addEventListener('click', backToUserList);
+});
+</script>
+</body>
+</html>
