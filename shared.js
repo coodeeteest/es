@@ -71,6 +71,7 @@ function renderNav(active) {
   const isAdmin = session.role === "admin";
 
   const links = [
+        { id: "transactions",   href: "transactions.html",   icon: "#", label: "সাম্প্রতিক লেনদেন" },
     { id: "index",   href: "index.html",   icon: "◈", label: "ড্যাশবোর্ড" },
     { id: "ledger",  href: "ledger.html",  icon: "⇅", label: "লেজার" },
     { id: "coin",    href: "coin.html",    icon: "◉", label: "কয়েন" },
