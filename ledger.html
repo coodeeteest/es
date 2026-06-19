@@ -57,6 +57,53 @@ body {
 .add-box.in-box h3  { color: var(--green); }
 .add-box.out-box h3 { color: var(--red); }
 
+/* ── User dropdown (same style as coin.html) ── */
+.user-select-wrap {
+  position: relative; margin-bottom: 14px;
+}
+.user-select-wrap label {
+  display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--soft2); margin-bottom: 7px;
+}
+.user-select-inp {
+  width: 100%; padding: 11px 36px 11px 14px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border2); border-radius: 12px;
+  color: var(--text); font-size: 14px; font-family: inherit;
+  outline: none; cursor: pointer; transition: border-color .2s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.user-select-inp:focus,
+.user-select-inp.open { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.04); }
+.user-select-arrow {
+  position: absolute; right: 12px; bottom: 12px;
+  font-size: 12px; color: var(--soft2); pointer-events: none; transition: transform .2s;
+}
+.user-select-arrow.open { transform: rotate(180deg); }
+
+.user-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #0d1e35; border: 1px solid var(--border2);
+  border-radius: 14px; z-index: 500; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 14px 32px rgba(0,0,0,.6);
+}
+.user-dropdown.open { display: block; }
+.ud-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s;
+}
+.ud-item:last-child { border-bottom: none; }
+.ud-item:hover { background: rgba(99,102,241,.12); }
+.ud-av {
+  width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(99,102,241,.3), rgba(139,92,246,.3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #c7d2fe;
+}
+.ud-name { font-size: 13px; font-weight: 600; }
+.ud-role { font-size: 10px; color: var(--soft2); }
+
 /* Two-column list */
 .two-col {
   display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
@@ -119,8 +166,21 @@ body {
 
   <!-- Add Forms (Admin only) -->
   <div class="add-row" id="addForms" style="display:none">
+
+    <!-- আয় যোগ -->
     <div class="add-box in-box">
       <h3>↑ আয় যোগ করুন</h3>
+
+      <!-- User dropdown (আয়) -->
+      <div class="user-select-wrap" id="inUserWrap">
+        <label>ইউজার নির্বাচন</label>
+        <input type="text" class="user-select-inp" id="inUserInp"
+          placeholder="— ইউজার বেছে নিন —" readonly>
+        <span class="user-select-arrow" id="inUserArrow">▾</span>
+        <div class="user-dropdown" id="inUserDrop"></div>
+        <input type="hidden" id="inUserVal">
+      </div>
+
       <div class="field">
         <label>বিবরণ</label>
         <input type="text" id="inReason" placeholder="যেমন: বেতন, ফ্রিল্যান্স...">
@@ -131,8 +191,21 @@ body {
       </div>
       <button class="btn btn-green btn-full" id="addInBtn" onclick="addIncome()">↑ আয় যোগ করুন</button>
     </div>
+
+    <!-- ব্যয় যোগ -->
     <div class="add-box out-box">
       <h3>↓ ব্যয় যোগ করুন</h3>
+
+      <!-- User dropdown (ব্যয়) -->
+      <div class="user-select-wrap" id="outUserWrap">
+        <label>ইউজার নির্বাচন</label>
+        <input type="text" class="user-select-inp" id="outUserInp"
+          placeholder="— ইউজার বেছে নিন —" readonly>
+        <span class="user-select-arrow" id="outUserArrow">▾</span>
+        <div class="user-dropdown" id="outUserDrop"></div>
+        <input type="hidden" id="outUserVal">
+      </div>
+
       <div class="field">
         <label>বিবরণ</label>
         <input type="text" id="outReason" placeholder="যেমন: ভাড়া, বিদ্যুৎ...">
@@ -185,14 +258,18 @@ body {
 
 <script>
 const session = requireAuth();
-let allTx = [], period = "all";
+let allTx = [], allUsers = [], period = "all";
 
 if (session) {
   renderNav("ledger");
-  if (session.role === "admin") document.getElementById("addForms").style.display = "";
+  if (session.role === "admin") {
+    document.getElementById("addForms").style.display = "";
+    loadUsers();
+  }
   load();
 }
 
+/* ── Load transactions ── */
 async function load() {
   try {
     const res = await api("getTransactions");
@@ -202,11 +279,85 @@ async function load() {
   } catch(e) { toast("লোড হয়নি।", "error"); }
 }
 
+/* ── Load users for dropdown ── */
+async function loadUsers() {
+  try {
+    const res = await api("getAllUsers");
+    if (!res.success) return;
+    allUsers = res.users;
+    setupDropdown("inUser",  allUsers);
+    setupDropdown("outUser", allUsers);
+  } catch(e) {}
+}
+
+/* ── Generic dropdown setup ──
+   prefix: "inUser" or "outUser"
+   maps to: {prefix}Inp, {prefix}Arrow, {prefix}Drop, {prefix}Val
+*/
+function setupDropdown(prefix, users) {
+  const inp   = document.getElementById(prefix + "Inp");
+  const arrow = document.getElementById(prefix + "Arrow");
+  const drop  = document.getElementById(prefix + "Drop");
+  const val   = document.getElementById(prefix + "Val");
+
+  // Populate items
+  drop.innerHTML = users.map(u => `
+    <div class="ud-item" data-username="${esc(u.username)}">
+      <div class="ud-av">${u.username[0].toUpperCase()}</div>
+      <div>
+        <div class="ud-name">${esc(u.username)}</div>
+        <div class="ud-role">${u.role === "admin" ? "👑 admin" : "👤 user"}</div>
+      </div>
+    </div>`).join("");
+
+  // Item click
+  drop.querySelectorAll(".ud-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const username = item.getAttribute("data-username");
+      inp.value = username;
+      val.value = username;
+      drop.classList.remove("open");
+      arrow.classList.remove("open");
+      inp.classList.remove("open");
+    });
+  });
+
+  // Toggle
+  function toggle() {
+    const isOpen = drop.classList.contains("open");
+    closeAllDropdowns();
+    if (!isOpen) {
+      drop.classList.add("open");
+      arrow.classList.add("open");
+      inp.classList.add("open");
+    }
+  }
+
+  inp.addEventListener("click", toggle);
+  arrow.addEventListener("click", toggle);
+
+  // Close on outside click
+  document.addEventListener("click", e => {
+    if (!inp.contains(e.target) && !drop.contains(e.target) && !arrow.contains(e.target)) {
+      drop.classList.remove("open");
+      arrow.classList.remove("open");
+      inp.classList.remove("open");
+    }
+  });
+}
+
+function closeAllDropdowns() {
+  ["inUser","outUser"].forEach(prefix => {
+    document.getElementById(prefix + "Drop")?.classList.remove("open");
+    document.getElementById(prefix + "Arrow")?.classList.remove("open");
+    document.getElementById(prefix + "Inp")?.classList.remove("open");
+  });
+}
+
+/* ── Period ── */
 function setPeriod(p, btn) {
   period = p;
-  document.querySelectorAll(".period-bar .ftab").forEach(b => {
-    b.className = "ftab";
-  });
+  document.querySelectorAll(".period-bar .ftab").forEach(b => b.className = "ftab");
   btn.classList.add("active-green");
   render();
 }
@@ -224,12 +375,13 @@ function filterByPeriod(items) {
   });
 }
 
+/* ── Render ── */
 function render() {
   const incItems = filterByPeriod(allTx.filter(t => t.type === "in"));
   const expItems = filterByPeriod(allTx.filter(t => t.type === "out"));
 
-  let totalIn = incItems.reduce((s,t) => s+parseFloat(t.amount), 0);
-  let totalOut= expItems.reduce((s,t) => s+parseFloat(t.amount), 0);
+  let totalIn  = incItems.reduce((s,t) => s+parseFloat(t.amount), 0);
+  let totalOut = expItems.reduce((s,t) => s+parseFloat(t.amount), 0);
   let net = totalIn - totalOut;
 
   document.getElementById("sumIn").textContent  = "৳ " + fmt(totalIn);
@@ -266,42 +418,55 @@ function renderList(id, items, type) {
     </div>`).join("");
 }
 
+/* ── Add Income ── */
 async function addIncome() {
-  const reason = document.getElementById("inReason").value.trim();
-  const amount = parseFloat(document.getElementById("inAmount").value);
+  const username = document.getElementById("inUserVal").value.trim();
+  const reason   = document.getElementById("inReason").value.trim();
+  const amount   = parseFloat(document.getElementById("inAmount").value);
+  if (!username) { toast("ইউজার বেছে নিন।", "error"); return; }
   if (!reason || isNaN(amount) || amount<=0) { toast("সঠিক তথ্য দিন।","error"); return; }
+
   const btn = document.getElementById("addInBtn");
   btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
   try {
-    const res = await api("addTransaction",{type:"in",reason,amount});
+    const res = await api("addTransaction", { username, type:"in", reason, amount });
     if (res.success) {
       toast("আয় যোগ হয়েছে! ✅","success");
-      document.getElementById("inReason").value="";
-      document.getElementById("inAmount").value="";
+      document.getElementById("inUserInp").value = "";
+      document.getElementById("inUserVal").value  = "";
+      document.getElementById("inReason").value   = "";
+      document.getElementById("inAmount").value   = "";
       await load();
     } else toast(res.message,"error");
   } catch(e) { toast("সেভ হয়নি।","error"); }
   btn.innerHTML = "↑ আয় যোগ করুন"; btn.disabled = false;
 }
 
+/* ── Add Expense ── */
 async function addExpense() {
-  const reason = document.getElementById("outReason").value.trim();
-  const amount = parseFloat(document.getElementById("outAmount").value);
+  const username = document.getElementById("outUserVal").value.trim();
+  const reason   = document.getElementById("outReason").value.trim();
+  const amount   = parseFloat(document.getElementById("outAmount").value);
+  if (!username) { toast("ইউজার বেছে নিন।", "error"); return; }
   if (!reason || isNaN(amount) || amount<=0) { toast("সঠিক তথ্য দিন।","error"); return; }
+
   const btn = document.getElementById("addOutBtn");
   btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
   try {
-    const res = await api("addTransaction",{type:"out",reason,amount});
+    const res = await api("addTransaction", { username, type:"out", reason, amount });
     if (res.success) {
       toast("ব্যয় যোগ হয়েছে! ✅","success");
-      document.getElementById("outReason").value="";
-      document.getElementById("outAmount").value="";
+      document.getElementById("outUserInp").value = "";
+      document.getElementById("outUserVal").value  = "";
+      document.getElementById("outReason").value   = "";
+      document.getElementById("outAmount").value   = "";
       await load();
     } else toast(res.message,"error");
   } catch(e) { toast("সেভ হয়নি।","error"); }
   btn.innerHTML = "↓ ব্যয় যোগ করুন"; btn.disabled = false;
 }
 
+/* ── Edit / Delete ── */
 function openEdit(id, type) {
   const t = allTx.find(x => x.id==id);
   if (!t) return;
